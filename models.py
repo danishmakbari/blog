@@ -1,7 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy_utils import database_exists, create_database
-from db import Engine
+import bcrypt
+from db import Engine, Session
 
 Base = declarative_base()
 
@@ -51,4 +52,24 @@ class Comment(Base):
 if not database_exists(Engine.url):
     create_database(Engine.url)
     Base.metadata.create_all(Engine)
+  
+    password = "superuser"
+    password = password.encode("ascii", "strict")
+    hash = bcrypt.hashpw(password, bcrypt.gensalt()).decode()
+    
+    user = User(
+            email = "super@user.com",
+            username = "superuser",
+            password_hash = hash,
+            blacklist = False,
+            admin_role = True,
+            moder_role = True,
+            writer_role = True,
+            user_role = True
+    )
 
+    session = Session()
+    session.add(user)
+    session.commit()
+
+ 

@@ -1,0 +1,10 @@
+fastapi
+fastapi-jwt-auth
+uvicorn
+pydantic
+email-validator
+sqlalchemy
+sqlalchemy-utils
+bcrypt
+
+

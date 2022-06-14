@@ -9,19 +9,44 @@ class UserLogin(BaseModel):
     username: str
     password: str
 
-class UserUpdateRole(BaseModel):
-    username: str
-    rolename: str
-    value: bool
 
-class UserGetRoles(BaseModel):
+
+class RolesUpdate(BaseModel):
+    username: str
+    admin_role: bool
+    moder_role: bool
+    writer_role: bool
+    user_role: bool
+
+class RolesGet(BaseModel):
     username: str
 
-class UserCreateDraft(BaseModel):
+
+
+
+class DraftCreate(BaseModel):
     header: str
     body: str
 
-class UserUpdateDraft(BaseModel):
+class DraftUpdate(BaseModel):
+    article_id: int
     header: str
     body: str
+
+class DraftGet(BaseModel):
+    article_id: int
+
+class DraftDelete(BaseModel):
+    article_id: int
+
+class DraftMoveToPublished(BaseModel):
+    article_id: int
+
+
+
+
+
+
+
+
 

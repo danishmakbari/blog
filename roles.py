@@ -7,17 +7,15 @@ import models
 import schemas
 import db
 
-def check_rolename(rolename: str):
-    roles = ["admin_role", "moder_role", "writer_role", "user_role"]
-    return rolename in roles
-
-@app.post("/users/get_roles", status_code = 201)
-def get_roles(user_data: schemas.UserGetRoles, Authorize: AuthJWT = Depends()):
+@app.post("/users/roles/get", status_code = 201)
+def get_roles(user_data: schemas.RolesGet, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
+    if not user_exists(user_data.username):
+        raise HTTPException(status_code = 400, detail = "Wrong username")
     return get_user_roles(user_data.username)
 
-@app.put('/users/update_role', status_code = 200)
-def update_role(user_data: schemas.UserUpdateRole, Authorize: AuthJWT = Depends()):
+@app.put('/users/roles/update', status_code = 200)
+def update_roles(user_data: schemas.RolesUpdate, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     current_user = Authorize.get_jwt_subject()
 
@@ -25,12 +23,19 @@ def update_role(user_data: schemas.UserUpdateRole, Authorize: AuthJWT = Depends(
     if not current_user_roles["admin_role"]:
         raise HTTPException(status_code = 403, detail = "You need to be an admin")
 
-    if not user_exists(user_data.username) or not check_rolename(user_data.rolename):
-        raise HTTPException(status_code = 400, detail = "Wrong username or rolename")
+    if not user_exists(user_data.username):
+        raise HTTPException(status_code = 400, detail = "Wrong username")
     
     session = db.Session()
-    session.query(models.User).filter_by(username = user_data.username).update({user_data.rolename: user_data.value})
+    session.query(models.User).filter_by(username = user_data.username).update(
+        {
+            "admin_role": user_data.admin_role,
+            "moder_role": user_data.moder_role,
+            "writer_role": user_data.writer_role,
+            "user_role": user_data.user_role
+        }
+    )
     session.commit()
   
-    return {"msg": "Role was updated"}
+    return {"msg": "Roles were updated"}
 

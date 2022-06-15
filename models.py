@@ -9,42 +9,41 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
 
-    id = Column("id", Integer, primary_key = True)
+    username = Column("username", String(50), primary_key = True)
     email = Column("email", String(50), unique = True, nullable = False)
-    username = Column("username", String(50), unique = True, nullable = False)
     password_hash = Column("password_hash", String, nullable = False)
-    admin_role = Column("admin_role", Boolean, nullable = False)
-    moder_role = Column("moder_role", Boolean, nullable = False)
-    writer_role = Column("writer_role", Boolean, nullable = False)
-    user_role = Column("user_role", Boolean, nullable = False)
+    admin = Column("admin", Boolean, nullable = False)
+    moder = Column("moder", Boolean, nullable = False)
+    writer = Column("writer", Boolean, nullable = False)
+    user = Column("user", Boolean, nullable = False)
     blacklist = Column("blacklist", Boolean, nullable = False)
 
 class Article(Base):
     __tablename__ = "articles"
     
-    article_author_rel = relation("ArticleAuthor", cascade = "all, delete") 
+    article_author_rel = relation("ArticleWriter", cascade = "all, delete") 
     comment_rel = relation("Comment", cascade = "all, delete") 
 
-    id = Column("id", Integer, primary_key = True)
+    article_id = Column("article_id", Integer, primary_key = True)
     header = Column("header", String(50), nullable = False)
     body = Column("body", String(50000), nullable = False)
     state = Column("state", String(50), CheckConstraint("state = 'draft' or state = 'published' or state = 'approved' or state = 'declined'"), nullable = False)
     decline_reason = Column("decline_reason", String(500))
 
-class ArticleAuthor(Base):
-    __tablename__ = "article_authors"
+class ArticleWriter(Base):
+    __tablename__ = "article_writers"
 
-    article_id = Column("article_id", Integer, ForeignKey("articles.id"), primary_key = True)
-    author_id = Column("author_id", Integer, ForeignKey("users.id"), primary_key = True)
+    article_id = Column("article_id", Integer, ForeignKey("articles.article_id"), primary_key = True)
+    username = Column("username", String(50), ForeignKey("users.username"), primary_key = True)
     position = Column("position", String(50), CheckConstraint("position = 'creator' or position = 'author' or position = 'editor'"), nullable = False)
 
 class Comment(Base):
     __tablename__ = "comments"
 
-    id = Column("id", Integer, primary_key = True)
+    comment_id = Column("comment_id", Integer, primary_key = True)
     body = Column("body", String(500), nullable = False)
-    user_id = Column("user_id", Integer, ForeignKey("users.id"), nullable = False)
-    article_id = Column("article_id", Integer, ForeignKey("articles.id"), nullable = False)
+    username = Column("username", String(50), ForeignKey("users.username"), nullable = False)
+    article_id = Column("article_id", Integer, ForeignKey("articles.article_id"), nullable = False)
 
 if not database_exists(Engine.url):
     create_database(Engine.url)
@@ -59,10 +58,10 @@ if not database_exists(Engine.url):
             username = "superuser",
             password_hash = hash,
             blacklist = False,
-            admin_role = True,
-            moder_role = True,
-            writer_role = True,
-            user_role = True
+            admin = True,
+            moder = True,
+            writer = True,
+            user = True
     )
 
     session = Session()

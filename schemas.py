@@ -1,52 +1,46 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 
-class UserSignup(BaseModel):
+# Session
+class SessionPost(BaseModel):
+    username: str
+    password: str
+
+# User
+class UserPost(BaseModel):
     email: EmailStr
     username: str
     password: str
 
-class UserLogin(BaseModel):
-    username: str
-    password: str
+class UserUsernameRolesPut(BaseModel):
+    admin: bool
+    moder: bool
+    writer: bool
+    user: bool
 
-
-
-class RolesUpdate(BaseModel):
-    username: str
-    admin_role: bool
-    moder_role: bool
-    writer_role: bool
-    user_role: bool
-
-class RolesGet(BaseModel):
-    username: str
-
-
-
-
-class DraftCreate(BaseModel):
+# Draft
+class DraftPost(BaseModel):
     header: str
     body: str
 
-class DraftUpdate(BaseModel):
-    article_id: int
+class DraftPut(BaseModel):
     header: str
     body: str
 
-class DraftGet(BaseModel):
+class DraftWriterPost(BaseModel):
+    username: str
+    position: str
+    @validator("position")
+    def check_position(cls, value):
+        values = ["author", "editor"]
+        if value not in values:
+            raise ValueError("Invalid position")
+        return value
+
+
+class PublishedMoveToDeclined(BaseModel):
     article_id: int
+    decline_reason: str
 
-class DraftDelete(BaseModel):
+class PublishedMoveToApproved(BaseModel):
     article_id: int
-
-class DraftMoveToPublished(BaseModel):
-    article_id: int
-
-
-
-
-
-
-
-
 

@@ -10,7 +10,7 @@ def user_exists(username: str):
     return user
 
 def user_check_blacklist(username: str):
-    user = user_get(username: str)
+    user = user_get(username)
     if user.blacklist:
         raise HTTPException(status_code = 403, detail = "You are banned")
     return

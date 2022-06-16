@@ -31,7 +31,7 @@ def authjwt_exception_handler(request: Request, exc: AuthJWTException):
 
 # Login
 @app.post("/session", status_code = 201)
-def session_post(data: schemas.SessionPost, Authorize: AuthJWT = Depends()):
+def f_session_post(data: schemas.SessionPost, Authorize: AuthJWT = Depends()):
     if not user_exists(data.username):
         raise HTTPException(status_code = 401, detail = "Bad credentials")
 
@@ -51,7 +51,7 @@ def session_post(data: schemas.SessionPost, Authorize: AuthJWT = Depends()):
 
 # Refresh access token
 @app.put('/session', status_code = 200)
-def session_put(Authorize: AuthJWT = Depends()):
+def f_session_put(Authorize: AuthJWT = Depends()):
     Authorize.jwt_refresh_token_required()
     current_username = Authorize.get_jwt_subject()
     new_access_token = Authorize.create_access_token(subject = current_username)
@@ -60,7 +60,7 @@ def session_put(Authorize: AuthJWT = Depends()):
 
 # Logout
 @app.delete('/session', status_code = 200)
-def session_delete(Authorize: AuthJWT = Depends()):
+def f_session_delete(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     Authorize.unset_jwt_cookies()
     return {"msg": "Successfully logout"}

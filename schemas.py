@@ -11,22 +11,36 @@ class UserPost(BaseModel):
     username: str
     password: str
 
-class UserUsernameRolesPut(BaseModel):
+class UserRolePut(BaseModel):
     admin: bool
     moder: bool
     writer: bool
     user: bool
 
-# Draft
-class DraftPost(BaseModel):
+class UserBlackList(BaseModel):
+    blacklist: bool
+
+# Article
+class ArticlePost(BaseModel):
     header: str
     body: str
 
-class DraftPut(BaseModel):
+class ArticlePut(BaseModel):
     header: str
     body: str
 
-class DraftWriterPost(BaseModel):
+class ArticleStatePut(BaseModel):
+    state: str
+    decline_reason: str
+    @validator("state")
+    def check_state(cls, value):
+        values = ["draft", "published", "approved", "declined"]
+        if value not in values:
+            raise ValueError("Invalid state")
+        return value
+
+
+class ArticleWriterPost(BaseModel):
     username: str
     position: str
     @validator("position")
@@ -36,11 +50,6 @@ class DraftWriterPost(BaseModel):
             raise ValueError("Invalid position")
         return value
 
-
-class PublishedMoveToDeclined(BaseModel):
-    article_id: int
-    decline_reason: str
-
-class PublishedMoveToApproved(BaseModel):
-    article_id: int
+class ArticleCommentPost(BaseModel):
+    body: str
 

@@ -21,7 +21,7 @@ class User(Base):
 class Article(Base):
     __tablename__ = "articles"
     
-    article_author_rel = relation("ArticleWriter", cascade = "all, delete") 
+    article_writer_rel = relation("ArticleWriter", cascade = "all, delete") 
     comment_rel = relation("Comment", cascade = "all, delete") 
 
     article_id = Column("article_id", Integer, primary_key = True)

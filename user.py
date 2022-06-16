@@ -13,7 +13,7 @@ import settings
 
 # Signup
 @app.post("/user", status_code = 201)
-def user_post(data: schemas.UserPost):
+def f_user_post(data: schemas.UserPost):
     password = data.password.encode("ascii", "strict")
     hash = bcrypt.hashpw(password, bcrypt.gensalt()).decode()
     
@@ -35,13 +35,14 @@ def user_post(data: schemas.UserPost):
     except:
         raise HTTPException(status_code = 409, detail = "Email or username already exists")
 
-    return {"msg": "Successfully signup"}
+    return {"username": data.username}
 
 # Get info about current user
 @app.get('/user/me', status_code = 200)
-def user_me_get(Authorize: AuthJWT = Depends()):
+def f_user_me_get(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     current_username = Authorize.get_jwt_subject()
+    user_check_blacklist(current_username)
 
     current_user = user_get(current_username)
 
@@ -57,12 +58,10 @@ def user_me_get(Authorize: AuthJWT = Depends()):
 
 # Get info about user
 @app.get('/user/{username}', status_code = 200)
-def fuser_get(username: str, Authorize: AuthJWT = Depends()):
+def f_user_get(username: str, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     current_username = Authorize.get_jwt_subject()
-
-    if not user_exists(username):
-        raise HTTPException(status_code = 400, detail = "Username doesn't exist")
+    user_check_blacklist(current_username)
 
     user = user_get(username)
 
@@ -76,10 +75,11 @@ def fuser_get(username: str, Authorize: AuthJWT = Depends()):
     }
 
 # Update roles
-@app.put('/user/{username}/roles', status_code = 200)
-def user_roles_put(username: str, data: schemas.UserUsernameRolesPut, Authorize: AuthJWT = Depends()):
+@app.put('/user/{username}/role', status_code = 200)
+def f_user_role_put(username: str, data: schemas.UserRolePut, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     current_username = Authorize.get_jwt_subject()
+    user_check_blacklist(current_username)
 
     if not user_isadmin(current_username):
         raise HTTPException(status_code = 403, detail = "You need to be an admin")
@@ -98,6 +98,54 @@ def user_roles_put(username: str, data: schemas.UserUsernameRolesPut, Authorize:
     )
     session.commit()
   
-    return {"msg": "Roles were updated"}
+    return {"username": username}
 
+@app.get('/user/{username}/article', status_code = 200)
+def f_user_article_get(username: str, Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    current_username = Authorize.get_jwt_subject()
+    user_check_blacklist(current_username)
+   
+    if not user_exists(username):
+        raise HTTPException(status_code = 400, detail = "Username doesn't exist")
+   
+    session = db.Session()
+    draft = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == username) & (models.Article.state == "draft")).all()
+    published = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == username) & (models.Article.state == "published")).all()
+    approved = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == username) & (models.Article.state == "approved")).all()
+    declined = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == username) & (models.Article.state == "declined")).all()
+    session.commit()
+
+    ret = {
+        "draft": [],
+        "published": [],
+        "approved": [],
+        "declined": []
+    }
+    for item in draft:
+        ret["draft"].append({"article_id": item.article_id, "header": item.header})
+    for item in published:
+        ret["published"].append({"article_id": item.article_id, "header": item.header})
+    for item in approved:
+        ret["approved"].append({"article_id": item.article_id, "header": item.header})
+    for item in declined:
+        ret["declined"].append({"article_id": item.article_id, "header": item.header})
+
+    return ret
+
+@app.put('/user/{username}/blacklist', status_code = 200)
+def f_user_blacklist(username: str, data: schemas.UserBlackList, Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    current_username = Authorize.get_jwt_subject()
+    user_check_blacklist(current_username)
+
+    if not user_isadmin(current_username):
+        raise HTTPException(status_code = 403, detail = "Access denied")
+ 
+    session = db.Session()
+    session.query(models.User).filter(models.User.username == username).update({"blacklist": data.blacklist})
+    session.commit()
+  
+    return {"username": username}
+    
 

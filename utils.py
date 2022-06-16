@@ -1,15 +1,25 @@
+from fastapi import HTTPException
 import db
 import models
 
-def user_get(username: str):
+def user_exists(username: str):
     session = db.Session()
     user = session.query(models.User).filter(models.User.username == username).first()
     session.expunge_all() 
     session.commit()
     return user
 
-def user_exists(username: str):
-    return bool(user_get(username))
+def user_check_blacklist(username: str):
+    user = user_get(username: str)
+    if user.blacklist:
+        raise HTTPException(status_code = 403, detail = "You are banned")
+    return
+
+def user_get(username: str):
+    user = user_exists(username)
+    if not user:
+        raise HTTPException(status_code = 400, detail = "User doesn't exist")
+    return user
 
 def user_isadmin(username: str):
     return user_get(username).admin
@@ -20,15 +30,18 @@ def user_ismoder(username: str):
 def user_iswriter(username: str):
     return user_get(username).writer
 
-def article_get(article_id: int):
+def article_exists(article_id: int):
     session = db.Session()
     article = session.query(models.Article).filter(models.Article.article_id == article_id).first()
     session.expunge_all() 
     session.commit()
     return article
 
-def article_exists(article_id: int):
-    return bool(article_get(article_id))
+def article_get(article_id: int):
+    article = article_exists(article_id)
+    if not article:
+        raise HTTPException(status_code = 400, detail = "Article doesn't exist")
+    return article
 
 def article_isdraft(article_id: int):
     return article_get(article_id).state == "draft"
@@ -81,6 +94,16 @@ def article_editors_get(article_id: int):
 
 def article_iseditor(article_id: int, username: str):
     return username in article_editors_get(article_id)
+
+def article_comments_get(article_id: int):
+    session = db.Session()
+    comments = session.query(models.Comment).filter(models.Comment.article_id == article_id).all()
+    session.expunge_all() 
+    session.commit()
+    comments = [comment.__dict__ for comment in comments]
+    for comment in comments:
+        comment.pop("article_id")
+    return comments
 
 
 

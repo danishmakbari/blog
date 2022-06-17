@@ -118,13 +118,15 @@ def f_article_state_put(article_id: int, data: schemas.ArticleStatePut, Authoriz
                 session = db.Session()
                 session.query(models.Article).filter(models.Article.article_id == article_id).update({"state": "approved", "decline_reason": ""})
                 session.commit()
+                return {"article_id": article_id}
             elif data.state == "declined":
                 session = db.Session()
                 session.query(models.Article).filter(models.Article.article_id == article_id).update({"state": "declined", "decline_reason": data.decline_reason})
                 session.commit()
-            else:
-                raise HTTPException(status_code = 403, detail = "Access denied")
-        elif user_iswriter(current_username) and article_iscreator(article_id, current_username):
+                return {"article_id": article_id}
+            #else:
+            #    raise HTTPException(status_code = 403, detail = "Access denied")
+        if user_iswriter(current_username) and article_iscreator(article_id, current_username):
             if data.state != "draft":
                 raise HTTPException(status_code = 403, detail = "Access denied")
             session = db.Session()

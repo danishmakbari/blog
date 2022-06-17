@@ -3,6 +3,7 @@ from sqlalchemy.orm import declarative_base, relation
 from sqlalchemy_utils import database_exists, create_database
 import bcrypt
 from db import Engine, Session
+import settings
 
 Base = declarative_base()
 
@@ -49,13 +50,13 @@ if not database_exists(Engine.url):
     create_database(Engine.url)
     Base.metadata.create_all(Engine)
   
-    password = "superuser"
+    password = settings.admin["password"]
     password = password.encode("ascii", "strict")
     hash = bcrypt.hashpw(password, bcrypt.gensalt()).decode()
     
     user = User(
-            email = "super@user.com",
-            username = "superuser",
+            email = settings.admin["email"],
+            username = settings.admin["username"],
             password_hash = hash,
             blacklist = False,
             admin = True,

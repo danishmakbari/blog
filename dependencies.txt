@@ -7,4 +7,3 @@ sqlalchemy
 sqlalchemy-utils
 bcrypt
 
-

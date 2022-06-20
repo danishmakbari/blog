@@ -41,6 +41,70 @@ def f_article_post(data: schemas.ArticlePost, Authorize: AuthJWT = Depends()):
 
     return {"article_id": article.article_id}
 
+@app.post('/article/{article_id}/mark', status_code = 201)
+def f_article_mark_post(article_id: int, data: schemas.ArticleMarkPost, Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    current_username = Authorize.get_jwt_subject()
+    user_check_blacklist(current_username)
+   
+    if not article_isapproved(article_id):
+        raise HTTPException(status_code = 403, detail = "Access denied")
+
+    mark = models.ArticleMark(
+        article_id = article_id,
+        username = current_username,
+        mark = data.mark
+    )
+
+    try:
+        session = db.Session()
+        session.add(mark)
+        session.commit()
+    except:
+        raise HTTPException(status_code = 400, detail = "Already added")
+
+    return {"article_id": article_id}
+
+@app.get('/article/{article_id}/mark', status_code = 200)
+def f_article_mark_get(article_id: int, Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    current_username = Authorize.get_jwt_subject()
+    user_check_blacklist(current_username)
+ 
+    if not article_isapproved(article_id):
+        raise HTTPException(status_code = 403, detail = "Access denied")
+
+    session = db.Session()
+    mark = session.query(models.ArticleMark).filter((models.ArticleMark.article_id == article_id) & (models.ArticleMark.username == current_username)).first()
+    session.commit()
+
+    if not mark:
+       raise HTTPException(status_code = 400, detail = "You need to add mark") 
+
+    return {"mark": mark.mark}
+
+
+@app.get('/article/{article_id}/avg_mark', status_code = 200)
+def f_article_avg_mark_get(article_id: int, Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    current_username = Authorize.get_jwt_subject()
+    user_check_blacklist(current_username)
+ 
+    if not article_isapproved(article_id):
+        raise HTTPException(status_code = 403, detail = "Access denied")
+
+    session = db.Session()
+    marks = session.query(models.ArticleMark).filter(models.ArticleMark.article_id == article_id).all()
+    session.commit()
+
+    avg_mark = 0.0
+    for item in marks:
+        avg_mark += item.mark
+    if len(marks):
+        avg_mark /= len(marks)
+
+    return {"avg_mark": round(avg_mark, 2)}
+
 @app.get('/article/{article_id}', status_code = 200)
 def f_article_get(article_id: int, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
@@ -53,8 +117,36 @@ def f_article_get(article_id: int, Authorize: AuthJWT = Depends()):
     elif article_ispublished(article_id):
         if not ((user_iswriter(current_username) and article_iswriter(article_id, current_username)) or user_ismoder(current_username)):
             raise HTTPException(status_code = 403, detail = "Access denied")
-    
+
+    try:
+        session = db.Session()
+        view = models.ArticleView(article_id = article_id, username = current_username)
+        session.add(view)
+        session.commit()
+    except:
+        pass
+
     return article_get(article_id).__dict__
+
+@app.get('/article/{article_id}/view', status_code = 200)
+def f_article_view_get(article_id: int, Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    current_username = Authorize.get_jwt_subject()
+    user_check_blacklist(current_username)
+ 
+    if article_isdraft(article_id) or article_isdeclined(article_id):
+        if not (user_iswriter(current_username) and article_iswriter(article_id, current_username)):
+            raise HTTPException(status_code = 403, detail = "Access denied")
+    elif article_ispublished(article_id):
+        if not ((user_iswriter(current_username) and article_iswriter(article_id, current_username)) or user_ismoder(current_username)):
+            raise HTTPException(status_code = 403, detail = "Access denied")
+
+    session = db.Session()
+    views = session.query(models.ArticleView).filter(models.ArticleView.article_id == article_id).all()
+    session.commit()
+
+    return {"views": len(views)}
+
 
 @app.put('/article/{article_id}', status_code = 200)
 def f_article_put(article_id: int, data: schemas.ArticlePut, Authorize: AuthJWT = Depends()):
@@ -220,12 +312,12 @@ def f_article_approved_get(Authorize: AuthJWT = Depends()):
     user_check_blacklist(current_username)
 
     session = db.Session()
-    headers = session.query(models.Article.article_id, models.Article.header).filter(models.Article.state == "approved").all()
+    headers = session.query(models.Article.article_id, models.Article.header, models.Article.time_updated).filter(models.Article.state == "approved").order_by(models.Article.time_updated.desc()).all()
     session.commit()
 
     retval = {"headers": []}
     for item in headers:
-        retval["headers"].append({"article_id": item.article_id, "header": item.header})
+        retval["headers"].append({"article_id": item.article_id, "header": item.header, "time_updated": item.time_updated})
 
     return retval
 
@@ -239,12 +331,12 @@ def f_article_published_get(Authorize: AuthJWT = Depends()):
         raise HTTPException(status_code = 403, detail = "Access denied")
 
     session = db.Session()
-    headers = session.query(models.Article.article_id, models.Article.header).filter(models.Article.state == "published").all()
+    headers = session.query(models.Article.article_id, models.Article.header, models.Article.time_updated).filter(models.Article.state == "published").order_by(models.Article.time_updated.desc()).all()
     session.commit()
 
     retval = {"headers": []}
     for item in headers:
-        retval["headers"].append({"article_id": item.article_id, "header": item.header})
+        retval["headers"].append({"article_id": item.article_id, "header": item.header, "time_updated": item.time_updated})
 
     return retval
 

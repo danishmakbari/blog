@@ -53,3 +53,13 @@ class ArticleWriterPost(BaseModel):
 class ArticleCommentPost(BaseModel):
     body: str
 
+class ArticleMarkPost(BaseModel):
+    mark: int
+    @validator("mark")
+    def check_mark(cls, value):
+        if value > 5 or value < 0:
+            raise ValueError("Invalid mark")
+        return value
+
+
+

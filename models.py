@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, CheckConstraint
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, CheckConstraint, DateTime
 from sqlalchemy.orm import declarative_base, relation
 from sqlalchemy_utils import database_exists, create_database
+from sqlalchemy.sql import func
 import bcrypt
 from db import Engine, Session
 import settings
@@ -31,12 +32,27 @@ class Article(Base):
     state = Column("state", String(50), CheckConstraint("state = 'draft' or state = 'published' or state = 'approved' or state = 'declined'"), nullable = False)
     decline_reason = Column("decline_reason", String(500))
 
+    time_updated = Column("time_updated", DateTime(timezone = True), server_default = func.now(), onupdate = func.now())
+
 class ArticleWriter(Base):
     __tablename__ = "article_writers"
 
     article_id = Column("article_id", Integer, ForeignKey("articles.article_id"), primary_key = True)
     username = Column("username", String(50), ForeignKey("users.username"), primary_key = True)
     position = Column("position", String(50), CheckConstraint("position = 'creator' or position = 'author' or position = 'editor'"), nullable = False)
+
+class ArticleMark(Base):
+    __tablename__ = "article_marks"
+
+    article_id = Column("article_id", Integer, ForeignKey("articles.article_id"), primary_key = True)
+    username = Column("username", String(50), ForeignKey("users.username"), primary_key = True)
+    mark = Column("mark", Integer, CheckConstraint("mark >= 0 and mark <= 5"), nullable = False)
+
+class ArticleView(Base):
+    __tablename__ = "article_views"
+
+    article_id = Column("article_id", Integer, ForeignKey("articles.article_id"), primary_key = True)
+    username = Column("username", String(50), ForeignKey("users.username"), primary_key = True)
 
 class Comment(Base):
     __tablename__ = "comments"
@@ -45,6 +61,8 @@ class Comment(Base):
     body = Column("body", String(500), nullable = False)
     username = Column("username", String(50), ForeignKey("users.username"), nullable = False)
     article_id = Column("article_id", Integer, ForeignKey("articles.article_id"), nullable = False)
+
+    time_updated = Column("time_updated", DateTime(timezone = True), server_default = func.now(), onupdate = func.now())
 
 if not database_exists(Engine.url):
     create_database(Engine.url)

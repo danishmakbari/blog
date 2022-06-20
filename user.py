@@ -45,6 +45,26 @@ def f_user_me_get(Authorize: AuthJWT = Depends()):
     user_check_blacklist(current_username)
 
     current_user = user_get(current_username)
+ 
+    session = db.Session()
+    draft = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == current_username) & (models.Article.state == "draft")).all()
+    published = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == current_username) & (models.Article.state == "published")).all()
+    approved = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == current_username) & (models.Article.state == "approved")).all()
+    declined = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == current_username) & (models.Article.state == "declined")).all()
+    session.commit()
+
+    draft_arr = []
+    published_arr = []
+    approved_arr = []
+    declined_arr = []
+    for item in draft:
+        draft_arr.append({"article_id": item.article_id, "header": item.header})
+    for item in published:
+        published_arr.append({"article_id": item.article_id, "header": item.header})
+    for item in approved:
+        approved_arr.append({"article_id": item.article_id, "header": item.header})
+    for item in declined:
+        declined_arr.append({"article_id": item.article_id, "header": item.header})
 
     return {
             "username": current_user.username,
@@ -53,7 +73,11 @@ def f_user_me_get(Authorize: AuthJWT = Depends()):
             "moder": current_user.moder,
             "writer": current_user.writer,
             "user": current_user.user,
-            "blacklist": current_user.blacklist
+            "blacklist": current_user.blacklist,
+            "draft": draft_arr,
+            "published": published_arr,
+            "approved": approved_arr,
+            "declined": declined_arr
     }
 
 # Get info about user
@@ -64,6 +88,15 @@ def f_user_get(username: str, Authorize: AuthJWT = Depends()):
     user_check_blacklist(current_username)
 
     user = user_get(username)
+ 
+    session = db.Session()
+    approved = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == username) & (models.Article.state == "approved")).all()
+    session.commit()
+
+    approved_arr = []
+
+    for item in approved:
+        approved_arr.append({"article_id": item.article_id, "header": item.header})
 
     return {
             "username": user.username,
@@ -71,7 +104,8 @@ def f_user_get(username: str, Authorize: AuthJWT = Depends()):
             "moder": user.moder,
             "writer": user.writer,
             "user": user.user,
-            "blacklist": user.blacklist
+            "blacklist": user.blacklist,
+            "approved": approved_arr
     }
 
 # Update roles
@@ -99,39 +133,6 @@ def f_user_role_put(username: str, data: schemas.UserRolePut, Authorize: AuthJWT
     session.commit()
   
     return {"username": username}
-
-@app.get('/user/{username}/article', status_code = 200)
-def f_user_article_get(username: str, Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
-    user_check_blacklist(current_username)
-   
-    if not user_exists(username):
-        raise HTTPException(status_code = 400, detail = "Username doesn't exist")
-   
-    session = db.Session()
-    draft = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == username) & (models.Article.state == "draft")).all()
-    published = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == username) & (models.Article.state == "published")).all()
-    approved = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == username) & (models.Article.state == "approved")).all()
-    declined = session.query(models.Article).join(models.ArticleWriter).filter((models.ArticleWriter.username == username) & (models.Article.state == "declined")).all()
-    session.commit()
-
-    ret = {
-        "draft": [],
-        "published": [],
-        "approved": [],
-        "declined": []
-    }
-    for item in draft:
-        ret["draft"].append({"article_id": item.article_id, "header": item.header})
-    for item in published:
-        ret["published"].append({"article_id": item.article_id, "header": item.header})
-    for item in approved:
-        ret["approved"].append({"article_id": item.article_id, "header": item.header})
-    for item in declined:
-        ret["declined"].append({"article_id": item.article_id, "header": item.header})
-
-    return ret
 
 @app.put('/user/{username}/blacklist', status_code = 200)
 def f_user_blacklist(username: str, data: schemas.UserBlackList, Authorize: AuthJWT = Depends()):

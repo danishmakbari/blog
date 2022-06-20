@@ -10,7 +10,7 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = "users"
 
-    username = Column("username", String(50), primary_key = True)
+    username = Column("username", String(50), CheckConstraint("username != 'me'"), primary_key = True)
     email = Column("email", String(50), unique = True, nullable = False)
     password_hash = Column("password_hash", String, nullable = False)
     admin = Column("admin", Boolean, nullable = False)

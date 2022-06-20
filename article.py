@@ -214,7 +214,7 @@ def f_article_writer_get(article_id: int, Authorize: AuthJWT = Depends()):
     }
 
 @app.get('/article/approved/header', status_code = 200)
-def f_article_approved_get(first: int, last: int, Authorize: AuthJWT = Depends()):
+def f_article_approved_get(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     current_username = Authorize.get_jwt_subject()
     user_check_blacklist(current_username)
@@ -224,14 +224,13 @@ def f_article_approved_get(first: int, last: int, Authorize: AuthJWT = Depends()
     session.commit()
 
     retval = {"headers": []}
-    if first < len(headers):
-        for i in range(first, min(last + 1, len(headers))):
-            retval["headers"].append({"article_id": headers[i].article_id, "header": headers[i].header})
+    for item in headers:
+        retval["headers"].append({"article_id": item.article_id, "header": item.header})
 
     return retval
 
 @app.get('/article/published/header', status_code = 200)
-def f_article_published_get(first: int, last: int, Authorize: AuthJWT = Depends()):
+def f_article_published_get(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     current_username = Authorize.get_jwt_subject()
     user_check_blacklist(current_username)
@@ -244,9 +243,8 @@ def f_article_published_get(first: int, last: int, Authorize: AuthJWT = Depends(
     session.commit()
 
     retval = {"headers": []}
-    if first < len(headers):
-        for i in range(first, min(last + 1, len(headers))):
-            retval["headers"].append({"article_id": headers[i].article_id, "header": headers[i].header})
+    for item in headers:
+        retval["headers"].append({"article_id": item.article_id, "header": item.header})
 
     return retval
 

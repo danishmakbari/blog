@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, CheckConstraint, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, CheckConstraint, DateTime, DECIMAL
 from sqlalchemy.orm import declarative_base, relation
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import func
@@ -33,6 +33,9 @@ class Article(Base):
     decline_reason = Column("decline_reason", String(500))
 
     time_updated = Column("time_updated", DateTime(timezone = True), server_default = func.now(), onupdate = func.now())
+
+    views = Column("views", Integer, nullable = False)
+    avg_mark = Column("avg_mark", DECIMAL(3, 2), nullable = False)
 
 class ArticleWriter(Base):
     __tablename__ = "article_writers"

@@ -13,7 +13,6 @@ def f_article_post(data: schemas.ArticlePost, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
     current_username = Authorize.get_jwt_subject()
     user_check_blacklist(current_username)
-
     
     if not user_iswriter(current_username):
         raise HTTPException(status_code = 403, detail = "Access denied")
@@ -22,7 +21,9 @@ def f_article_post(data: schemas.ArticlePost, Authorize: AuthJWT = Depends()):
         header = data.header,
         body = data.body,
         state = "draft",
-        decline_reason = ""
+        decline_reason = "",
+        avg_mark = 0,
+        views = 0
     )
 
     session = db.Session()
@@ -63,6 +64,21 @@ def f_article_mark_post(article_id: int, data: schemas.ArticleMarkPost, Authoriz
     except:
         raise HTTPException(status_code = 400, detail = "Already added")
 
+    session = db.Session()
+    marks = session.query(models.ArticleMark).filter(models.ArticleMark.article_id == article_id).all()
+    session.commit()
+
+    avg_mark = 0.0
+    for item in marks:
+        avg_mark += item.mark
+    if len(marks):
+        avg_mark /= len(marks)
+    avg_mark = round(avg_mark, 2)
+ 
+    session = db.Session()
+    session.query(models.Article).filter(models.Article.article_id == article_id).update({"avg_mark": avg_mark})
+    session.commit()
+    
     return {"article_id": article_id}
 
 @app.get('/article/{article_id}/mark', status_code = 200)
@@ -82,28 +98,6 @@ def f_article_mark_get(article_id: int, Authorize: AuthJWT = Depends()):
        raise HTTPException(status_code = 400, detail = "You need to add mark") 
 
     return {"mark": mark.mark}
-
-
-@app.get('/article/{article_id}/avg_mark', status_code = 200)
-def f_article_avg_mark_get(article_id: int, Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
-    user_check_blacklist(current_username)
- 
-    if not article_isapproved(article_id):
-        raise HTTPException(status_code = 403, detail = "Access denied")
-
-    session = db.Session()
-    marks = session.query(models.ArticleMark).filter(models.ArticleMark.article_id == article_id).all()
-    session.commit()
-
-    avg_mark = 0.0
-    for item in marks:
-        avg_mark += item.mark
-    if len(marks):
-        avg_mark /= len(marks)
-
-    return {"avg_mark": round(avg_mark, 2)}
 
 @app.get('/article/{article_id}', status_code = 200)
 def f_article_get(article_id: int, Authorize: AuthJWT = Depends()):
@@ -126,27 +120,12 @@ def f_article_get(article_id: int, Authorize: AuthJWT = Depends()):
     except:
         pass
 
-    return article_get(article_id).__dict__
-
-@app.get('/article/{article_id}/view', status_code = 200)
-def f_article_view_get(article_id: int, Authorize: AuthJWT = Depends()):
-    Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
-    user_check_blacklist(current_username)
- 
-    if article_isdraft(article_id) or article_isdeclined(article_id):
-        if not (user_iswriter(current_username) and article_iswriter(article_id, current_username)):
-            raise HTTPException(status_code = 403, detail = "Access denied")
-    elif article_ispublished(article_id):
-        if not ((user_iswriter(current_username) and article_iswriter(article_id, current_username)) or user_ismoder(current_username)):
-            raise HTTPException(status_code = 403, detail = "Access denied")
-
     session = db.Session()
     views = session.query(models.ArticleView).filter(models.ArticleView.article_id == article_id).all()
+    session.query(models.Article).filter(models.Article.article_id == article_id).update({"views": len(views)})
     session.commit()
 
-    return {"views": len(views)}
-
+    return article_get(article_id).__dict__
 
 @app.put('/article/{article_id}', status_code = 200)
 def f_article_put(article_id: int, data: schemas.ArticlePut, Authorize: AuthJWT = Depends()):

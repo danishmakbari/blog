@@ -14,7 +14,15 @@ def f_search_get(search_string: str, sort_type: str, order: str, Authorize: Auth
     current_username = Authorize.get_jwt_subject()
     user_check_blacklist(current_username)
 
-    search_string = '%' + search_string + '%'
+    search_string = search_string.split()
+    for i in range(len(search_string)):
+        search_string[i] = '%' + search_string[i] + '%'
+    like =  (models.Article.header.ilike(search_string[0])) | (models.Article.body.ilike(search_string[0])) | (models.ArticleWriter.username.ilike(search_string[0]))
+    for i in range(1, len(search_string)):
+        like = (like) & ((models.Article.header.ilike(search_string[i])) | (models.Article.body.ilike(search_string[i])) | (models.ArticleWriter.username.ilike(search_string[i])))
+
+
+    #search_string = '%' + search_string + '%'
 
     session = db.Session()
 
@@ -27,9 +35,10 @@ def f_search_get(search_string: str, sort_type: str, order: str, Authorize: Auth
             models.ArticleWriter.username
         ).filter(
             (models.Article.state == "approved") & (
-                (models.Article.header.ilike(search_string)) |
-                (models.Article.body.ilike(search_string)) |
-                (models.ArticleWriter.username.ilike(search_string))
+                like
+                #(models.Article.header.ilike(search_string)) |
+                #(models.Article.body.ilike(search_string)) |
+                #(models.ArticleWriter.username.ilike(search_string))
             )
         )
 
@@ -54,23 +63,20 @@ def f_search_get(search_string: str, sort_type: str, order: str, Authorize: Auth
 
     session.commit()
 
-    headers = []
+    ids = [item.article_id for item in values]
+    result = []
+    result_ids = []
+    
+    for i in range(len(ids)):
+        if ids[i] not in result_ids:
+            result_ids.append(ids[i])
+            result.append({
+                "article_id": values[i].article_id, 
+                "header": values[i].header,
+                "views": values[i].views, 
+                "avg_mark": values[i].avg_mark,
+                "date": values[i].time_updated
+            })
 
-    for item in values:
-        flag = False
-        for hitem in headers:
-            if item.article_id == hitem["article_id"]:
-                flag = True
-                break
-        if flag:
-            continue
-        headers.append({
-            "article_id": item.article_id, 
-            "header": item.header,
-            "views": item.views, 
-            "avg_mark": item.avg_mark,
-            "date": item.time_updated
-        })
-
-    return {"headers": headers}
+    return {"headers": result}
 

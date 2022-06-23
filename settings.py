@@ -15,4 +15,8 @@ admin = {
         "password": "admin"
 }
 
+mailru = {
+        "id": "e4a280d9f5524a7fbb1859187e1e9130",
+        "secret": "88166636ce404f10a24cb0363569ae4c"
+}
 

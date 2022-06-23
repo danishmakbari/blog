@@ -4,6 +4,8 @@ from fastapi_jwt_auth import AuthJWT
 from fastapi_jwt_auth.exceptions import AuthJWTException
 from pydantic import BaseModel
 import bcrypt
+from starlette.responses import RedirectResponse
+import requests
 
 from main import app
 from utils import *
@@ -65,4 +67,54 @@ def f_session_delete(Authorize: AuthJWT = Depends()):
     Authorize.unset_jwt_cookies()
     return {"msg": "Successfully logout"}
 
+@app.get("/session/mailru", status_code = 200)
+def f_session_mailru_get(request: Request):
+    url = "https://o2.mail.ru/login?client_id={}&response_type={}&scope={}&redirect_uri={}&state={}".format(
+            settings.mailru["id"],
+            "code",
+            "biz.api%20userinfo",
+            "https://localhost:8000/session/mailru/callback",
+            "state"
+    )
+    return RedirectResponse(url = url)
+
+@app.get("/session/mailru/callback", status_code = 200)
+def f_session_mailru_callback(state: str, code: str, Authorize: AuthJWT = Depends()):
+    url = "https://o2.mail.ru/token?grant_type={}&code={}&redirect_uri={}".format(
+            "authorization_code",
+            code,
+            "https://localhost:8000/session/mailru/callback"
+    )
+    response = requests.post(url, auth = requests.auth.HTTPBasicAuth(settings.mailru["id"], settings.mailru["secret"]))
+    access_token = response.json()["access_token"]
+   
+    url = "https://o2.mail.ru/userinfo?access_token={}".format(access_token)
+    response = requests.get(url)
+    data = response.json()
+
+    user = models.User(
+            email = data["email"],
+            username = data["email"],
+            password_hash = None,
+            blacklist = False,
+            admin = False,
+            moder = False,
+            writer = False,
+            user = True
+    )
+   
+    try:
+        session = db.Session()
+        session.add(user)
+        session.commit()
+    except:
+        pass
+ 
+    access_token = Authorize.create_access_token(subject = user.username)
+    refresh_token = Authorize.create_refresh_token(subject = user.username)
+
+    Authorize.set_access_cookies(access_token)
+    Authorize.set_refresh_cookies(refresh_token)
+
+    return {"access_token": access_token, "refresh_token": refresh_token}
 

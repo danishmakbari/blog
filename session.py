@@ -79,7 +79,7 @@ def f_session_mailru_get(request: Request):
     return RedirectResponse(url = url)
 
 @app.get("/session/mailru/callback", status_code = 200)
-def f_session_mailru_callback(state: str, code: str, Authorize: AuthJWT = Depends()):
+def f_session_mailru_callback_get(state: str, code: str, Authorize: AuthJWT = Depends()):
     url = "https://o2.mail.ru/token?grant_type={}&code={}&redirect_uri={}".format(
             "authorization_code",
             code,

@@ -140,7 +140,9 @@ def f_session_mailru_callback_get(state: str, code: str, Authorize: AuthJWT = De
         session.commit()
     except:
         pass
- 
+
+    user = user_get(user.username)
+
     payload = json.dumps({"username": user.username, "temp_id": user.temp_id})
     access_token = Authorize.create_access_token(subject = payload)
     refresh_token = Authorize.create_refresh_token(subject = payload)

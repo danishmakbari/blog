@@ -14,7 +14,7 @@ class User(Base):
 
     username = Column("username", String(50), CheckConstraint("username != 'me'"), primary_key = True)
     email = Column("email", String(50), unique = True, nullable = False)
-    password_hash = Column("password_hash", String, nullable = False)
+    password_hash = Column("password_hash", String)
     admin = Column("admin", Boolean, nullable = False)
     moder = Column("moder", Boolean, nullable = False)
     writer = Column("writer", Boolean, nullable = False)

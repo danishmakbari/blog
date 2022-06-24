@@ -17,7 +17,7 @@ import db
 import settings
 
 class Settings(BaseModel):
-    authjwt_secret_key: str = settings.jwt_secret
+    authjwt_secret_key: str = settings.jwt["secret"]
     authjwt_token_location: set = {"cookies"}
     
     authjwt_cookie_csrf_protect: bool = False
@@ -103,7 +103,7 @@ def f_session_mailru_get(request: Request):
             settings.mailru["id"],
             "code",
             "biz.api%20userinfo",
-            "https://localhost:8000/session/mailru/callback",
+            "https://{}:{}/session/mailru/callback".format(settings.web_server["host"], settings.web_server["port"]),
             "state"
     )
     return RedirectResponse(url = url)
@@ -113,7 +113,7 @@ def f_session_mailru_callback_get(state: str, code: str, Authorize: AuthJWT = De
     url = "https://o2.mail.ru/token?grant_type={}&code={}&redirect_uri={}".format(
             "authorization_code",
             code,
-            "https://localhost:8000/session/mailru/callback"
+            "https://{}:{}/session/mailru/callback".format(settings.web_server["host"], settings.web_server["port"])
     )
     response = requests.post(url, auth = requests.auth.HTTPBasicAuth(settings.mailru["id"], settings.mailru["secret"]))
     access_token = response.json()["access_token"]

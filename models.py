@@ -3,6 +3,7 @@ from sqlalchemy.orm import declarative_base, relation
 from sqlalchemy_utils import database_exists, create_database
 from sqlalchemy.sql import func
 import bcrypt
+import random
 from db import Engine, Session
 import settings
 
@@ -19,6 +20,8 @@ class User(Base):
     writer = Column("writer", Boolean, nullable = False)
     user = Column("user", Boolean, nullable = False)
     blacklist = Column("blacklist", Boolean, nullable = False)
+
+    temp_id = Column("temp_id", Integer, nullable = False)
 
 class Article(Base):
     __tablename__ = "articles"
@@ -83,7 +86,8 @@ if not database_exists(Engine.url):
             admin = True,
             moder = True,
             writer = True,
-            user = True
+            user = True,
+            temp_id = random.randint(-32768, 32767)
     )
 
     session = Session()

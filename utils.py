@@ -1,6 +1,14 @@
 from fastapi import HTTPException
 import db
 import models
+import json
+
+def payload_check(payload: str):
+    payload = json.loads(payload)
+    user = user_get(payload["username"])
+    if payload["temp_id"] != user.temp_id:
+        raise HTTPException(status_code = 401, detail = "Unauthorized")
+    return user.username
 
 def user_exists(username: str):
     session = db.Session()

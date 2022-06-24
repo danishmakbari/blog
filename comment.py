@@ -11,7 +11,7 @@ import db
 @app.delete('/comment/{comment_id}', status_code = 200)
 def f_comment_delete(comment_id: int, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
  
     if not user_ismoder(current_username):

@@ -2,6 +2,7 @@ from fastapi import HTTPException, Depends, Request
 from fastapi_jwt_auth import AuthJWT
 from pydantic import BaseModel
 import bcrypt
+import random
 
 from main import app
 from utils import *
@@ -25,7 +26,8 @@ def f_user_post(data: schemas.UserPost):
             admin = False,
             moder = False,
             writer = False,
-            user = True
+            user = True,
+            temp_id = random.randint(-32768, 32767)
     )
    
     try:
@@ -41,7 +43,7 @@ def f_user_post(data: schemas.UserPost):
 @app.get('/user/me', status_code = 200)
 def f_user_me_get(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
 
     current_user = user_get(current_username)
@@ -84,7 +86,7 @@ def f_user_me_get(Authorize: AuthJWT = Depends()):
 @app.get('/user/{username}', status_code = 200)
 def f_user_get(username: str, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
 
     user = user_get(username)
@@ -112,7 +114,7 @@ def f_user_get(username: str, Authorize: AuthJWT = Depends()):
 @app.put('/user/{username}/role', status_code = 200)
 def f_user_role_put(username: str, data: schemas.UserRolePut, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
 
     if not user_isadmin(current_username):
@@ -137,7 +139,7 @@ def f_user_role_put(username: str, data: schemas.UserRolePut, Authorize: AuthJWT
 @app.put('/user/{username}/blacklist', status_code = 200)
 def f_user_blacklist(username: str, data: schemas.UserBlackList, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
 
     if not user_isadmin(current_username):

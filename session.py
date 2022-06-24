@@ -6,6 +6,8 @@ from pydantic import BaseModel
 import bcrypt
 from starlette.responses import RedirectResponse
 import requests
+import random
+import json
 
 from main import app
 from utils import *
@@ -37,14 +39,16 @@ def f_session_post(data: schemas.SessionPost, Authorize: AuthJWT = Depends()):
     if not user_exists(data.username):
         raise HTTPException(status_code = 401, detail = "Bad credentials")
 
-    hash = user_get(data.username).password_hash.encode("ascii", "strict")
+    user = user_get(data.username)
+    hash = user.password_hash.encode("ascii", "strict")
     password = data.password.encode("ascii", "strict")
     
     if not bcrypt.checkpw(password, hash):
         raise HTTPException(status_code = 401, detail = "Bad credentials")
 
-    access_token = Authorize.create_access_token(subject = data.username)
-    refresh_token = Authorize.create_refresh_token(subject = data.username)
+    payload = json.dumps({"username": user.username, "temp_id": user.temp_id})
+    access_token = Authorize.create_access_token(subject = payload)
+    refresh_token = Authorize.create_refresh_token(subject = payload)
 
     Authorize.set_access_cookies(access_token)
     Authorize.set_refresh_cookies(refresh_token)
@@ -55,8 +59,10 @@ def f_session_post(data: schemas.SessionPost, Authorize: AuthJWT = Depends()):
 @app.put('/session', status_code = 200)
 def f_session_put(Authorize: AuthJWT = Depends()):
     Authorize.jwt_refresh_token_required()
-    current_username = Authorize.get_jwt_subject()
-    new_access_token = Authorize.create_access_token(subject = current_username)
+    current_username = payload_check(Authorize.get_jwt_subject())
+    user = user_get(current_username)
+    payload = json.dumps({"username": user.username, "temp_id": user.temp_id})
+    new_access_token = Authorize.create_access_token(subject = payload)
     Authorize.set_access_cookies(new_access_token)
     return {"access_token": new_access_token}
 
@@ -64,8 +70,32 @@ def f_session_put(Authorize: AuthJWT = Depends()):
 @app.delete('/session', status_code = 200)
 def f_session_delete(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
+    current_username = payload_check(Authorize.get_jwt_subject())
     Authorize.unset_jwt_cookies()
     return {"msg": "Successfully logout"}
+
+@app.put('/session/all', status_code = 200)
+def f_session_all_put(Authorize: AuthJWT = Depends()):
+    Authorize.jwt_required()
+    current_username = payload_check(Authorize.get_jwt_subject())
+    session = db.Session()
+    user = session.query(models.User).filter(models.User.username == current_username).first()
+    randval = user.temp_id
+    while randval == user.temp_id:
+        randval = random.randint(-32768, 32767)
+    session.query(models.User).filter(models.User.username == current_username).update({"temp_id": randval})
+    session.commit()
+
+    payload = json.dumps({"username": user.username, "temp_id": user.temp_id})
+    access_token = Authorize.create_access_token(subject = payload)
+    refresh_token = Authorize.create_refresh_token(subject = payload)
+
+    Authorize.set_access_cookies(access_token)
+    Authorize.set_refresh_cookies(refresh_token)
+
+    return {"access_token": access_token, "refresh_token": refresh_token}
+
+
 
 @app.get("/session/mailru", status_code = 200)
 def f_session_mailru_get(request: Request):
@@ -100,7 +130,8 @@ def f_session_mailru_callback_get(state: str, code: str, Authorize: AuthJWT = De
             admin = False,
             moder = False,
             writer = False,
-            user = True
+            user = True,
+            temp_id = random.randint(-32768, 32767)
     )
    
     try:
@@ -110,8 +141,9 @@ def f_session_mailru_callback_get(state: str, code: str, Authorize: AuthJWT = De
     except:
         pass
  
-    access_token = Authorize.create_access_token(subject = user.username)
-    refresh_token = Authorize.create_refresh_token(subject = user.username)
+    payload = json.dumps({"username": user.username, "temp_id": user.temp_id})
+    access_token = Authorize.create_access_token(subject = payload)
+    refresh_token = Authorize.create_refresh_token(subject = payload)
 
     Authorize.set_access_cookies(access_token)
     Authorize.set_refresh_cookies(refresh_token)

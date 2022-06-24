@@ -11,7 +11,7 @@ import db
 @app.post('/article', status_code = 201)
 def f_article_post(data: schemas.ArticlePost, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
     
     if not user_iswriter(current_username):
@@ -45,7 +45,7 @@ def f_article_post(data: schemas.ArticlePost, Authorize: AuthJWT = Depends()):
 @app.post('/article/{article_id}/mark', status_code = 201)
 def f_article_mark_post(article_id: int, data: schemas.ArticleMarkPost, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
    
     if not article_isapproved(article_id):
@@ -84,7 +84,7 @@ def f_article_mark_post(article_id: int, data: schemas.ArticleMarkPost, Authoriz
 @app.get('/article/{article_id}/mark', status_code = 200)
 def f_article_mark_get(article_id: int, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
  
     if not article_isapproved(article_id):
@@ -102,7 +102,7 @@ def f_article_mark_get(article_id: int, Authorize: AuthJWT = Depends()):
 @app.get('/article/{article_id}', status_code = 200)
 def f_article_get(article_id: int, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
  
     if article_isdraft(article_id) or article_isdeclined(article_id):
@@ -130,7 +130,7 @@ def f_article_get(article_id: int, Authorize: AuthJWT = Depends()):
 @app.put('/article/{article_id}', status_code = 200)
 def f_article_put(article_id: int, data: schemas.ArticlePut, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
 
     if not (user_iswriter(current_username) and article_iswriter(article_id, current_username)):
@@ -153,7 +153,7 @@ def f_article_put(article_id: int, data: schemas.ArticlePut, Authorize: AuthJWT 
 @app.delete('/article/{article_id}', status_code = 200)
 def f_article_delete(article_id: int, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
  
     if not (user_iswriter(current_username) and article_iscreator(article_id, current_username)):
@@ -172,7 +172,7 @@ def f_article_delete(article_id: int, Authorize: AuthJWT = Depends()):
 @app.put('/article/{article_id}/state', status_code = 200)
 def f_article_state_put(article_id: int, data: schemas.ArticleStatePut, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
 
     if article_isdraft(article_id):
@@ -219,7 +219,7 @@ def f_article_state_put(article_id: int, data: schemas.ArticleStatePut, Authoriz
 @app.post('/article/{article_id}/writer')
 def f_article_writer_post(article_id: int, data: schemas.ArticleWriterPost, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
    
     if not (user_iswriter(current_username) and article_iscreator(article_id, current_username)):
@@ -246,7 +246,7 @@ def f_article_writer_post(article_id: int, data: schemas.ArticleWriterPost, Auth
 @app.delete('/article/{article_id}/writer/{username}', status_code = 200)
 def f_article_writer_delete(article_id: int, username: str, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
     
     if not (user_iswriter(current_username) and article_iscreator(article_id, current_username)):
@@ -268,7 +268,7 @@ def f_article_writer_delete(article_id: int, username: str, Authorize: AuthJWT =
 @app.get('/article/{article_id}/writer', status_code = 200)
 def f_article_writer_get(article_id: int, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
   
     if article_isdraft(article_id) or article_isdeclined(article_id):
@@ -287,7 +287,7 @@ def f_article_writer_get(article_id: int, Authorize: AuthJWT = Depends()):
 @app.get('/article/approved/header', status_code = 200)
 def f_article_approved_get(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
 
     session = db.Session()
@@ -303,7 +303,7 @@ def f_article_approved_get(Authorize: AuthJWT = Depends()):
 @app.get('/article/published/header', status_code = 200)
 def f_article_published_get(Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
 
     if not user_ismoder(current_username):
@@ -322,7 +322,7 @@ def f_article_published_get(Authorize: AuthJWT = Depends()):
 @app.get('/article/{article_id}/comment', status_code = 200)
 def f_article_comment_get(article_id: int, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
   
     if article_isdraft(article_id) or article_isdeclined(article_id):
@@ -337,7 +337,7 @@ def f_article_comment_get(article_id: int, Authorize: AuthJWT = Depends()):
 @app.post('/article/{article_id}/comment', status_code = 201)
 def f_article_comment_post(article_id: int, data: schemas.ArticleCommentPost, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
     
     if not article_isapproved(article_id):

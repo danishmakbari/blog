@@ -11,7 +11,7 @@ import db
 @app.get('/search', status_code = 200)
 def f_search_get(search_string: str, sort_type: str, order: str, Authorize: AuthJWT = Depends()):
     Authorize.jwt_required()
-    current_username = Authorize.get_jwt_subject()
+    current_username = payload_check(Authorize.get_jwt_subject())
     user_check_blacklist(current_username)
 
     search_string = search_string.split()

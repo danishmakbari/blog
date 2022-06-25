@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, validator
+from typing import Union
 
 # Session
 class SessionPost(BaseModel):
@@ -24,10 +25,12 @@ class UserBlackList(BaseModel):
 class ArticlePost(BaseModel):
     header: str
     body: str
+    section: Union[str, None]
 
 class ArticlePut(BaseModel):
     header: str
     body: str
+    section: Union[str, None]
 
 class ArticleStatePut(BaseModel):
     state: str
@@ -61,5 +64,9 @@ class ArticleMarkPost(BaseModel):
             raise ValueError("Invalid mark")
         return value
 
+class SectionPost(BaseModel):
+    section: str
 
+class SectionDelete(BaseModel):
+    section: str
 

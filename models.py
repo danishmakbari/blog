@@ -40,6 +40,8 @@ class Article(Base):
     views = Column("views", Integer, nullable = False)
     avg_mark = Column("avg_mark", DECIMAL(3, 2), nullable = False)
 
+    section = Column("section", String(50), ForeignKey("article_sections.section", ondelete = "SET NULL"), nullable = True)
+
 class ArticleWriter(Base):
     __tablename__ = "article_writers"
 
@@ -69,6 +71,11 @@ class Comment(Base):
     article_id = Column("article_id", Integer, ForeignKey("articles.article_id"), nullable = False)
 
     time_updated = Column("time_updated", DateTime(timezone = True), server_default = func.now(), onupdate = func.now())
+
+class ArticleSection(Base):
+    __tablename__ = "article_sections"
+
+    section = Column("section", String(50), primary_key = True)
 
 if not database_exists(Engine.url):
     create_database(Engine.url)

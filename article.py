@@ -23,7 +23,8 @@ def f_article_post(data: schemas.ArticlePost, Authorize: AuthJWT = Depends()):
         state = "draft",
         decline_reason = "",
         avg_mark = 0,
-        views = 0
+        views = 0,
+        section = data.section
     )
 
     session = db.Session()
@@ -143,7 +144,8 @@ def f_article_put(article_id: int, data: schemas.ArticlePut, Authorize: AuthJWT 
     session.query(models.Article).filter(models.Article.article_id == article_id).update(
         {
             "header": data.header,
-            "body": data.body
+            "body": data.body,
+            "section": data.section
         }
     )
     session.commit()
@@ -291,12 +293,26 @@ def f_article_approved_get(Authorize: AuthJWT = Depends()):
     user_check_blacklist(current_username)
 
     session = db.Session()
-    headers = session.query(models.Article.article_id, models.Article.header, models.Article.time_updated).filter(models.Article.state == "approved").order_by(models.Article.time_updated.desc()).all()
+    headers = session.query(
+            models.Article.article_id,
+            models.Article.header,
+            models.Article.time_updated,
+            models.Article.views,
+            models.Article.avg_mark,
+            models.Article.section
+        ).filter(models.Article.state == "approved").order_by(models.Article.time_updated.desc()).all()
     session.commit()
 
     retval = {"headers": []}
     for item in headers:
-        retval["headers"].append({"article_id": item.article_id, "header": item.header, "time_updated": item.time_updated})
+        retval["headers"].append({
+                    "article_id": item.article_id,
+                    "header": item.header,
+                    "time_updated": item.time_updated,
+                    "views": item.views,
+                    "avg_mark": item.avg_mark,
+                    "section": item.section
+                })
 
     return retval
 
@@ -310,12 +326,26 @@ def f_article_published_get(Authorize: AuthJWT = Depends()):
         raise HTTPException(status_code = 403, detail = "Access denied")
 
     session = db.Session()
-    headers = session.query(models.Article.article_id, models.Article.header, models.Article.time_updated).filter(models.Article.state == "published").order_by(models.Article.time_updated.desc()).all()
+    headers = session.query(
+            models.Article.article_id,
+            models.Article.header,
+            models.Article.time_updated,
+            models.Article.views,
+            models.Article.avg_mark,
+            models.Article.section
+        ).filter(models.Article.state == "published").order_by(models.Article.time_updated.desc()).all()
     session.commit()
 
     retval = {"headers": []}
     for item in headers:
-        retval["headers"].append({"article_id": item.article_id, "header": item.header, "time_updated": item.time_updated})
+        retval["headers"].append({
+                    "article_id": item.article_id,
+                    "header": item.header,
+                    "time_updated": item.time_updated,
+                    "views": item.views,
+                    "avg_mark": item.avg_mark,
+                    "section": item.section
+            })
 
     return retval
 

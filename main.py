@@ -9,6 +9,7 @@ import user
 import article
 import comment
 import search
+import section
 
 if __name__ == "__main__":
     uvicorn.run("main:app", port = settings.web_server["port"], host = settings.web_server["host"], reload = True, ssl_keyfile="./cert/key.pem", ssl_certfile="./cert/cert.pem")

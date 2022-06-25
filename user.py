@@ -60,13 +60,41 @@ def f_user_me_get(Authorize: AuthJWT = Depends()):
     approved_arr = []
     declined_arr = []
     for item in draft:
-        draft_arr.append({"article_id": item.article_id, "header": item.header})
+        draft_arr.append({
+                    "article_id": item.article_id,
+                    "header": item.header,
+                    "time_updated": item.time_updated,
+                    "views": item.views,
+                    "avg_mark": item.avg_mark,
+                    "section": item.section
+            })
     for item in published:
-        published_arr.append({"article_id": item.article_id, "header": item.header})
+        published_arr.append({
+                    "article_id": item.article_id,
+                    "header": item.header,
+                    "time_updated": item.time_updated,
+                    "views": item.views,
+                    "avg_mark": item.avg_mark,
+                    "section": item.section
+            })
     for item in approved:
-        approved_arr.append({"article_id": item.article_id, "header": item.header})
+        approved_arr.append({
+                    "article_id": item.article_id,
+                    "header": item.header,
+                    "time_updated": item.time_updated,
+                    "views": item.views,
+                    "avg_mark": item.avg_mark,
+                    "section": item.section
+            })
     for item in declined:
-        declined_arr.append({"article_id": item.article_id, "header": item.header})
+        declined_arr.append({
+                    "article_id": item.article_id,
+                    "header": item.header,
+                    "time_updated": item.time_updated,
+                    "views": item.views,
+                    "avg_mark": item.avg_mark,
+                    "section": item.section
+            })
 
     return {
             "username": current_user.username,
@@ -98,7 +126,14 @@ def f_user_get(username: str, Authorize: AuthJWT = Depends()):
     approved_arr = []
 
     for item in approved:
-        approved_arr.append({"article_id": item.article_id, "header": item.header})
+        approved_arr.append({
+                    "article_id": item.article_id,
+                    "header": item.header,
+                    "time_updated": item.time_updated,
+                    "views": item.views,
+                    "avg_mark": item.avg_mark,
+                    "section": item.section
+            })
 
     return {
             "username": user.username,

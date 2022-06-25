@@ -17,30 +17,13 @@ def f_search_get(search_string: str, sort_type: str, order: str, Authorize: Auth
     search_string = search_string.split()
     for i in range(len(search_string)):
         search_string[i] = '%' + search_string[i] + '%'
-    like =  (models.Article.header.ilike(search_string[0])) | (models.Article.body.ilike(search_string[0])) | (models.ArticleWriter.username.ilike(search_string[0]))
+    like = (models.Article.header.ilike(search_string[0])) | (models.Article.body.ilike(search_string[0])) | (models.ArticleWriter.username.ilike(search_string[0]))
     for i in range(1, len(search_string)):
         like = (like) & ((models.Article.header.ilike(search_string[i])) | (models.Article.body.ilike(search_string[i])) | (models.ArticleWriter.username.ilike(search_string[i])))
 
-
-    #search_string = '%' + search_string + '%'
-
     session = db.Session()
 
-    values = session.query(
-            models.Article.article_id,
-            models.Article.header,
-            models.Article.views,
-            models.Article.avg_mark,
-            models.Article.time_updated,
-            models.ArticleWriter.username
-        ).filter(
-            (models.Article.state == "approved") & (
-                like
-                #(models.Article.header.ilike(search_string)) |
-                #(models.Article.body.ilike(search_string)) |
-                #(models.ArticleWriter.username.ilike(search_string))
-            )
-        )
+    values = session.query(models.Article).join(models.ArticleWriter).filter((models.Article.state == "approved") & (like))
 
     field = None
     if sort_type == "date":
@@ -75,7 +58,8 @@ def f_search_get(search_string: str, sort_type: str, order: str, Authorize: Auth
                 "header": values[i].header,
                 "views": values[i].views, 
                 "avg_mark": values[i].avg_mark,
-                "date": values[i].time_updated
+                "date": values[i].time_updated,
+                "section": values[i].section
             })
 
     return {"headers": result}

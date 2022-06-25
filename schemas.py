@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, validator
 from typing import Union
+from utils import *
 
 # Session
 class SessionPost(BaseModel):
@@ -26,11 +27,21 @@ class ArticlePost(BaseModel):
     header: str
     body: str
     section: Union[str, None]
+    @validator("section")
+    def check_section(cls, value):
+        if not section_exists(value) and value != None:
+            raise ValueError("Section doesn't exist")
+        return value
 
 class ArticlePut(BaseModel):
     header: str
     body: str
     section: Union[str, None]
+    @validator("section")
+    def check_section(cls, value):
+        if not section_exists(value) and value != None:
+            raise ValueError("Section doesn't exist")
+        return value
 
 class ArticleStatePut(BaseModel):
     state: str
@@ -66,7 +77,17 @@ class ArticleMarkPost(BaseModel):
 
 class SectionPost(BaseModel):
     section: str
+    @validator("section")
+    def check_section(cls, value):
+        if section_exists(value):
+            raise ValueError("Section exists")
+        return value
 
 class SectionDelete(BaseModel):
     section: str
+    @validator("section")
+    def check_section(cls, value):
+        if not section_exists(value):
+            raise ValueError("Section doesn't exist")
+        return value
 

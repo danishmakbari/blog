@@ -3,6 +3,13 @@ import db
 import models
 import json
 
+def section_exists(section: str):
+    session = db.Session()
+    section = session.query(models.ArticleSection).filter(models.ArticleSection.section == section).first()
+    session.expunge_all() 
+    session.commit()
+    return section
+
 def payload_check(payload: str):
     payload = json.loads(payload)
     user = user_get(payload["username"])
